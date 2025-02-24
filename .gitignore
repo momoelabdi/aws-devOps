@@ -1,6 +1,9 @@
 .env
 env.dev
-infra/domain-1/terraform.*
-infra/domain-1/.terraform*
+infra/domain-*/terraform.*
+infra/domain-*/.terraform*
 notes.txt
+
+
+
 
