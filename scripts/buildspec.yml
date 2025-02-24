@@ -25,7 +25,6 @@ phases:
     commands:
       - echo "Pushing Docker image to ECR..."
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo "Cleaning up Docker..."
       - echo "Updating kubeconfig for EKS..."
       - aws eks --region $AWS_DEFAULT_REGION update-kubeconfig --name $CLUSTER_NAME 
       - kubectl get nodes
@@ -35,6 +34,7 @@ phases:
       - docker cp $(docker create $REPOSITORY_URI:$IMAGE_TAG):/usr/src/app/helm-charts ./helm-postgress
       - helm upgrade -i api ./helm-charts --set image.repository=$REPOSITORY_URI --set image.tag=$IMAGE_TAG
       - helm upgrade -i db ./helm-postgress
-      # - docker image prune -a -f
+      - echo "Cleaning up Docker..."
+      - docker image prune -a -f
       - rm -rf ./helm-*
       - echo " Deployment Finished "
