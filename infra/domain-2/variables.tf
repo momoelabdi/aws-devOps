@@ -5,17 +5,6 @@ variable "ecs_cluster_name" {
   description = "ECS cluster name"
 }
 
-
-variable "cidr_block" {
-  type        = string
-  default     = "172.20.0.0/24"
-  description = "The IPv4 CIDR block for the VPC."
-  validation {
-    condition     = can(cidrnetmask(var.cidr_block))
-    error_message = "Must be a valid IPv4 CIDR block address."
-  }
-}
-
 variable "subnet_count" {
   type        = number
   default     = 3
