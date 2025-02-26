@@ -7,11 +7,11 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
 # ******* ECS service ******** 
 resource "aws_ecs_service" "ecs_service" {
-  name            = "ecs-service"
+  name            = "jenkins-service"
   cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.task.arn
   launch_type     = "EC2"
-  desired_count   = 2
+  desired_count   = 1
 }
 
 resource "aws_ecs_task_definition" "task" {
@@ -20,14 +20,14 @@ resource "aws_ecs_task_definition" "task" {
   execution_role_arn = aws_iam_role.execution_tasks_role.arn
   container_definitions = jsonencode([
     {
-      name      = "ALB"
-      image     = "nginx:latest"
+      name      = "JENKINS"
+      image     = "jenkins/jenkins:lts"
       cpu       = 10
       memory    = 512
       essential = true
       portMappings = [
         {
-          containerPort = 80
+          containerPort = 8080
           hostPort      = 80
         }
       ]
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "task" {
         logDriver = "awslogs",
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
-          "awslogs-region"        = "eu-central-1",
+          "awslogs-region"        = data.aws_region.current.name,
           "awslogs-stream-prefix" = "app"
         }
       }
@@ -49,18 +49,12 @@ resource "aws_autoscaling_group" "ecs_asg" {
   max_size            = 2
   min_size            = 1
   desired_capacity    = 1
-  vpc_zone_identifier = aws_subnet.private[*].id # -> TODO ELB/public 
+  vpc_zone_identifier = aws_subnet.public[*].id 
   health_check_type   = "EC2"
 
 
   launch_template {
     id = aws_launch_template.ecs_tpl.id
-  }
-
-  tag {
-    key                 = "Name"
-    value               = "${var.ecs_cluster_name}-ASG"
-    propagate_at_launch = true
   }
 }
 
@@ -80,7 +74,6 @@ resource "aws_ecs_capacity_provider" "main" {
     }
   }
 }
-
 
 resource "aws_ecs_cluster_capacity_providers" "cluster_cp" {
   cluster_name       = aws_ecs_cluster.ecs_cluster.name
@@ -119,6 +112,8 @@ data "aws_ssm_parameter" "ecs_node_ami" {
 
 # ********** Container servive Cloudwatch Logs ******************
 resource "aws_cloudwatch_log_group" "ecs" {
-  name              = "/ecs/ecs-service" # TODO -> var.service_name
+  name              = "/ecs/jenkins-service" # TODO -> var.service_name
   retention_in_days = 14
 }
+
+data "aws_region" "current" {}
