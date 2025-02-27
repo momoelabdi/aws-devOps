@@ -2,6 +2,8 @@
 env.dev
 infra/domain-*/terraform.*
 infra/domain-*/.terraform*
+infra/domain-*/multi-region-deployer/eu_*/.terraform*
+infra/domain-*/multi-region-deployer/eu_*/terraform.*
 notes.txt
 
 

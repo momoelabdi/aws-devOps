@@ -7,7 +7,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
 # ******* ECS service ******** 
 resource "aws_ecs_service" "ecs_service" {
-  name            = "jenkins-service"
+  name            = var.service_name
   cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.task.arn
   launch_type     = "EC2"
@@ -20,8 +20,8 @@ resource "aws_ecs_task_definition" "task" {
   execution_role_arn = aws_iam_role.execution_tasks_role.arn
   container_definitions = jsonencode([
     {
-      name      = "JENKINS"
-      image     = "jenkins/jenkins:lts"
+      name      = var.container_name
+      image     = var.image_name
       cpu       = 10
       memory    = 512
       essential = true
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "task" {
         logDriver = "awslogs",
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs.name,
-          "awslogs-region"        = data.aws_region.current.name,
+          "awslogs-region"        = var.region
           "awslogs-stream-prefix" = "app"
         }
       }
@@ -45,13 +45,12 @@ resource "aws_ecs_task_definition" "task" {
 
 # ***** autoscalling group **************
 resource "aws_autoscaling_group" "ecs_asg" {
-  name                = "ecs_asg"
-  max_size            = 2
-  min_size            = 1
-  desired_capacity    = 1
-  vpc_zone_identifier = aws_subnet.public[*].id 
+  name                = var.autoscaling_gname
+  max_size            = var.max_size
+  min_size            = var.min_size
+  desired_capacity    = var.desired_capacity
+  vpc_zone_identifier = aws_subnet.public[*].id
   health_check_type   = "EC2"
-
 
   launch_template {
     id = aws_launch_template.ecs_tpl.id
@@ -87,11 +86,11 @@ resource "aws_ecs_cluster_capacity_providers" "cluster_cp" {
 # -> where containers will be running 
 resource "aws_launch_template" "ecs_tpl" {
   image_id      = data.aws_ssm_parameter.ecs_node_ami.value
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
 
   # TODO -> vpc_security_group_ids  = [SG] 
 
-  user_data = base64encode(templatefile("${path.module}/../../scripts/ecs_init.sh", {
+  user_data = base64encode(templatefile("${path.module}/../../../scripts/ecs_init.sh", {
     ecs_cluster_name = aws_ecs_cluster.ecs_cluster.name
   }))
 
@@ -112,8 +111,6 @@ data "aws_ssm_parameter" "ecs_node_ami" {
 
 # ********** Container servive Cloudwatch Logs ******************
 resource "aws_cloudwatch_log_group" "ecs" {
-  name              = "/ecs/jenkins-service" # TODO -> var.service_name
+  name              = "/ecs/${var.service_name}"
   retention_in_days = 14
 }
-
-data "aws_region" "current" {}
