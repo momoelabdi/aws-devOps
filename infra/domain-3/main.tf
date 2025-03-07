@@ -5,6 +5,7 @@ module "network" {
   source         = "./modules/networking"
   public_subnets = 3
   private_subnets = 3
+  cluster_name = var.cluster_name
 }
 
 # ******* EKS cluster ********

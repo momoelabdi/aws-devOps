@@ -1,3 +1,8 @@
+variable "cluster_name" {
+  type        = string
+  description = "EKS cluster Name"
+}
+
 variable "public_subnets" {
   type        = number
   description = "Number of public sunbets to provision"

@@ -35,8 +35,11 @@ resource "aws_subnet" "public" {
   vpc_id            = data.aws_vpc.default.id
   cidr_block        = cidrsubnet(data.aws_vpc.default.cidr_block, 4, count.index)
   availability_zone = data.aws_availability_zones.azs.names[count.index]
+  map_public_ip_on_launch = true
   tags = {
     Name = "public-subnet-${count.index + 1}"
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 # ********* Public  route table **********
@@ -66,7 +69,12 @@ resource "aws_subnet" "private" {
   vpc_id            = data.aws_vpc.default.id
   cidr_block        = cidrsubnet(data.aws_vpc.default.cidr_block, 4, count.index + var.private_subnets)
   availability_zone = data.aws_availability_zones.azs.names[count.index]
-  tags              = { Name = "private-subnet-${count.index}" }
+  map_public_ip_on_launch = false
+  tags  = { 
+    Name = "private-subnet-${count.index}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"           = "1"
+  }
 }
 
 # ******* Private route table ********
