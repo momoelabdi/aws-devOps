@@ -15,6 +15,7 @@ module "eks" {
   eks_node_group_name = var.eks_node_group_name
   worker_instance_type =  var.worker_instance_type
   subnet_ids   = module.network.private_subnets_ids
+  vpc_id = module.network.vpc_id
 }
 
 module "storage" {
